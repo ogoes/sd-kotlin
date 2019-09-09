@@ -3,14 +3,8 @@ CLIENT=client/main
 COMP=kotlinc
 ARG=-include-runtime -d
 
-
-
-
-
-
 all: compServer compClient
-	1 2> /dev/null
-
+	echo -n
 runS: compServer
 	java -jar server.jar ./.shared 9999
 
@@ -18,10 +12,10 @@ runC: compClient
 	java -jar client.jar localhost:9999
 
 compServer:
-	$(COMP) server.kt Server.kt Interface.kt Client.kt $(ARG) server.jar
+	$(COMP) server/server.kt server/Server.kt Interface.kt client/Client.kt $(ARG) server.jar
 
 compClient:
-	$(COMP) client.kt Interface.kt Client.kt $(ARG) server.jar
+	$(COMP) client/client.kt Interface.kt client/Client.kt $(ARG) server.jar
 
 
 

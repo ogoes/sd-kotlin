@@ -1,17 +1,12 @@
-package primeiro
-
-import primeiro.Interface
-
-import java.net.ServerSocket
-import java.net.Socket
-import java.nio.charset.Charset
+package client
 
 import java.io.InputStream
 import java.io.OutputStream
-
+import java.net.Socket
 import java.util.*
+import primeiro.Interface
 
-class Client: Interface {
+class Client : Interface {
 
   private var _socket: Socket
   private var _inputStream: InputStream
@@ -27,32 +22,31 @@ class Client: Interface {
     _connected = true
   }
 
-
-  fun sendMessage (message: String) {
-    sendTextMessage (_outputStream, message)
+  fun sendMessage(message: String) {
+    sendTextMessage(_outputStream, message)
   }
 
-  fun sendMessage (message: ByteArray) {
-    sendBinaryMessage (_outputStream, message)
+  fun sendMessage(message: ByteArray) {
+    sendBinaryMessage(_outputStream, message)
   }
 
-  fun sendMessage (message: Int) {
+  fun sendMessage(message: Int) {
     sendIntegerMessage(_outputStream, message)
   }
 
-  fun receiveTextMessage (bufferSize: Int = 4096): String {
+  fun receiveTextMessage(bufferSize: Int = 4096): String {
     return super.receiveTextMessage(_inputStream, bufferSize)
   }
 
-  fun receiveBinaryMessage (bufferSize: Int = 4096): ByteArray {
+  fun receiveBinaryMessage(bufferSize: Int = 4096): ByteArray {
     return super.receiveBinaryMessage(_inputStream, bufferSize)
   }
-  
-  fun receiveMessage (): Int {
+
+  fun receiveMessage(): Int {
     return receiveIntegerMessage(_inputStream)
   }
 
-  fun finish () {
+  fun finish() {
     _connected = false
     _socket.close()
     _inputStream.close()

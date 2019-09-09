@@ -1,32 +1,25 @@
-package primeiro
-import primeiro.Server
+package server
 
-import java.io.InputStream
-import java.io.OutputStream
+import client.Client
+import java.io.File
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
-
-import java.time.LocalTime
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-import java.io.File
-
-
-fun getTime (): String {
+fun getTime(): String {
   val time: LocalTime = LocalTime.now()
 
   return time.format(DateTimeFormatter.ofPattern("HH:mm:ss")).toString()
 }
-fun getDate (): String {
+fun getDate(): String {
   val date: LocalDateTime = LocalDateTime.now()
 
   return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")).toString()
 }
-fun showFiles (client: Client, folder: String = "default") {
+fun showFiles(client: Client, folder: String = "default") {
 
   if (folder.isEmpty()) {
-
   } else {
     val files = File(folder).list()
 
@@ -36,9 +29,9 @@ fun showFiles (client: Client, folder: String = "default") {
     }
   }
 }
-fun sendFile (client: Client, filename: String) {
+fun sendFile(client: Client, filename: String) {
 }
-fun clientHandler (client: Client, folder: String) {
+fun clientHandler(client: Client, folder: String) {
 
   var message = client.receiveTextMessage()
 
@@ -55,13 +48,12 @@ fun clientHandler (client: Client, folder: String) {
       val response: String = getDate()
 
       client.sendMessage(response)
-
     } else if (filesRegex.matches(message)) {
       showFiles(client, folder)
     } else if (downRegex.matches(message)) {
       val fileRegex = Regex("\\s[\\w\\d\\.]+")
 
-      val file = fileRegex.find(message)
+      val file = fileRegex.find(message)!!
       try {
         sendFile(client, file.value.substring(1))
       } finally {
@@ -75,14 +67,12 @@ fun clientHandler (client: Client, folder: String) {
   client.finish()
 }
 
-
-
-fun main (args: ArrayList<String>) {
+fun main(args: ArrayList<String>) {
 
   println("Running at port ${args[2]}")
 
   var server: ServerSocket = ServerSocket(args[2].toInt())
-  
+
   while (true) {
     var client: Client = server.acceptConnection()
 
@@ -91,5 +81,4 @@ fun main (args: ArrayList<String>) {
     }
     handlerThread.start()
   }
-
 }

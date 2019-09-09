@@ -1,11 +1,7 @@
-package primeiro
+package server
 
+import client.Client
 import java.net.ServerSocket
-import java.net.Socket
-import java.nio.charset.Charset
-
-import primeiro.Client
-
 
 class ServerSocket {
   private var _socket: ServerSocket
@@ -17,7 +13,7 @@ class ServerSocket {
     println("Server running at $port")
   }
 
-  fun acceptConnection (): Client {
+  fun acceptConnection(): Client {
     val socket = _socket.accept()
     val client = Client(_connectedClients.size, socket)
 
