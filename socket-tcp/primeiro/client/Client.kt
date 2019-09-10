@@ -42,8 +42,12 @@ class Client : Interface {
     return super.receiveBinaryMessage(_inputStream, bufferSize)
   }
 
-  fun receiveMessage(): Int {
-    return receiveIntegerMessage(_inputStream)
+  fun receiveByteMessage(): Byte {
+    return super.receiveBinaryMessage(_inputStream)
+  }
+
+  fun receiveIntegerMessage(): Int {
+    return super.receiveIntegerMessage(_inputStream)
   }
 
   fun finish() {
