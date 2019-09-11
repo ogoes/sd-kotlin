@@ -10,18 +10,40 @@ import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 
+
+fun reloadFileDownloadProgressBar (loaded: Int, size: Int) {
+  // println(" [          ] 99%")
+
+
+  val porcent: Int = ((loaded.toDouble()/size.toDouble()) * 100.0).toInt()
+
+  if (porcent % 10 == 0) {
+
+    
+    print("\u001B[s")
+    
+    print(" |\u001B[47m")
+    for (i in 1..(porcent/10)) {
+      print(" ")
+    }
+    print("\u001B[0m")
+    for (i in 1..(10-(porcent/10))) {
+      print(" ")
+    }
+    print("| ")
+    print(porcent)
+    print("%")
+    
+    print("\u001B[u")
+  }
+
+}
+
 fun receiveTimeDate(server: Client, type: String) {
   server.sendMessage(type)
 
   var response: String = server.receiveTextMessage()
 
-
-
-  println(response)
-  print("\u001B[${response.length}D")
-  print(response)
-  print("\u001B[${response.length}D")
-  println(response)
   println(response)
 
 }
@@ -42,7 +64,36 @@ fun showFiles(server: Client) {
 
 }
 
-fun receiveFile(server: Client, filename: String) {
+fun receiveFile(server: Client, filename: String, localStorage: String = "./.client/") {
+
+  server.sendMessage("DOWN ${filename}")
+
+
+  val fileSize = server.receiveIntegerMessage()
+
+  server.sendMessage("ACK")
+
+  
+  if (fileSize > 0) {
+    val file = File(localStorage + filename)
+    val fileOutputStream = file.outputStream()
+
+    for (i in 1..fileSize) {
+      val byte = server.receiveBinaryMessage()
+
+      reloadFileDownloadProgressBar(i, fileSize)
+      
+      fileOutputStream.write(byte)
+
+      server.sendMessage("ACK")
+    }
+    fileOutputStream.close()
+    print("\n")
+  } else {
+    println("Arquivo não existe")
+  }
+
+
 }
 
 fun interation(socket: Client) {

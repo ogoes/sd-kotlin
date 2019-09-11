@@ -33,34 +33,55 @@ fun showFiles(client: Client, folder: String = "default") {
   }
 }
 fun sendFile(client: Client, filename: String) {
+
+  val file: File = File(filename)
+
+  if (file.exists()) {
+
+    val fileSize: Int = file.length().toInt()
+
+    client.sendMessage(fileSize)
+    client.receiveTextMessage()
+
+    val fileInputStream = file.inputStream()
+    val bytes = ByteArray(1)
+
+    for (i in 1..fileSize) {
+      fileInputStream.read(bytes)
+
+      client.sendMessage(bytes)
+      client.receiveTextMessage()
+    }
+
+    fileInputStream.close()
+  } else {
+    client.sendMessage(0)
+    client.receiveTextMessage()
+  }
 }
 fun clientHandler(client: Client, folder: String) {
 
   try {
-
     var message = client.receiveTextMessage()
-    
+
     while (message != "EXIT") {
 
       if (message == "TIME") {
-        
+
         val response: String = getTime()
         client.sendMessage(response)
-        
       } else if (message == "DATE") {
-        
+
         val response: String = getDate()
         client.sendMessage(response)
-        
       } else if (message == "FILES") {
-        
+
       showFiles(client, folder)
-      
       } else if (message.substring(0, 4) == "DOWN") {
         // println(message)
 
         val fileRegex = Regex("\\s[\\w\\d\\.]+")
-        
+
         val file = fileRegex.find(message)!!
         try {
           sendFile(client, folder + "/" + file.value.substring(1))
@@ -68,29 +89,25 @@ fun clientHandler(client: Client, folder: String) {
           println(t)
         }
       }
-    
+
       message = client.receiveTextMessage()
     }
   } catch (t: Throwable) {
     println("____________________________________")
   }
-  
+
   client.finish()
 }
 
-
-
-fun main(args: Array<String>){
+fun main(args: Array<String>) {
 
   println(args[0])
   println(args[1])
 
   var server: ServerSocket = ServerSocket(args[1].toInt())
 
-
   while (true) {
 
-    
     var client: Client = server.acceptConnection()
 
     var handlerThread = Thread {
