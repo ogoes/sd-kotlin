@@ -12,10 +12,10 @@ runC: compClient
 	java -jar client.jar localhost 9999
 
 compServer:
-	$(COMP) server/main.kt server/Server.kt Interface.kt client/Client.kt $(ARG) server.jar
+	$(COMP) server/main.kt server/Server.kt Interface.kt SocketConnection.kt $(ARG) server.jar
 
 compClient:
-	$(COMP) client/main.kt Interface.kt client/Client.kt $(ARG) client.jar
+	$(COMP) client/main.kt Interface.kt SocketConnection.kt $(ARG) client.jar
 
 
 

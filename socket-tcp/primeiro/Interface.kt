@@ -46,13 +46,6 @@ interface Interface {
     outputStream.flush()
   }
 
-  fun receiveBinaryMessage (inputStream: InputStream): Byte {
-    
-    val buffer: ByteArray = ByteArray(1)
-    val size: Int = inputStream.read(buffer)
-
-    return buffer[0]
-  }
 
   fun sendIntegerMessage (outputStream: OutputStream, message: Int) {
 

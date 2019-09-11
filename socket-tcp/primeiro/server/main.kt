@@ -1,6 +1,6 @@
 package server
 
-import client.Client
+import primeiro.SocketConnection
 import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -17,7 +17,7 @@ fun getDate(): String {
 
   return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")).toString()
 }
-fun showFiles(client: Client, folder: String = "default") {
+fun showFiles(client: SocketConnection, folder: String = "default") {
 
   if (folder.isEmpty()) {
   } else {
@@ -32,7 +32,7 @@ fun showFiles(client: Client, folder: String = "default") {
     }
   }
 }
-fun sendFile(client: Client, filename: String) {
+fun sendFile(client: SocketConnection, filename: String) {
 
   val file: File = File(filename)
 
@@ -59,7 +59,7 @@ fun sendFile(client: Client, filename: String) {
     client.receiveTextMessage()
   }
 }
-fun clientHandler(client: Client, folder: String) {
+fun clientHandler(client: SocketConnection, folder: String) {
 
   try {
     var message = client.receiveTextMessage()
@@ -108,7 +108,7 @@ fun main(args: Array<String>) {
 
   while (true) {
 
-    var client: Client = server.acceptConnection()
+    var client: SocketConnection = server.acceptConnection()
 
     var handlerThread = Thread {
       clientHandler(client, args[0])
