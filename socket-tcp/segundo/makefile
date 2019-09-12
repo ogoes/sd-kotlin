@@ -17,5 +17,10 @@ compServer:
 compClient:
 	$(COMP) client/main.kt Interface.kt SocketConnection.kt $(ARG) client.jar
 
+
+
+test:
+	$(COMP) teste.kt $(ARG) teste.jar && java -jar teste.jar
+
 clean: 
 	rm *.jar

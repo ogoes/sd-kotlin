@@ -9,7 +9,7 @@ interface Interface {
     outputStream.flush()
   }
 
-  fun receiveMessage(inputStream: InputStream, bufferSize: Int = 258): ByteArray {
+  fun receiveMessage(inputStream: InputStream, bufferSize: Int): ByteArray {
 
     val buffer: ByteArray = ByteArray(bufferSize)
     val size: Int = inputStream.read(buffer)
@@ -17,3 +17,4 @@ interface Interface {
     return buffer.copyOf(size)
   }
 }
+
