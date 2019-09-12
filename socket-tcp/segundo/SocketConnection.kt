@@ -1,12 +1,11 @@
-package client
+package segundo
 
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
 import java.util.*
-import segundo.Interface
 
-class Client : Interface {
+class SocketConnection : Interface {
   private var _socket: Socket
   private var _inputStream: InputStream
   private var _outputStream: OutputStream
@@ -22,15 +21,11 @@ class Client : Interface {
   }
 
   fun sendMessage(message: ByteArray) {
-    sendBinaryMessage(_outputStream, message)
+    super.sendMessage(_outputStream, message)
   }
 
-  fun receiveBinaryMessage(bufferSize: Int = 4096): ByteArray {
-    return super.receiveBinaryMessage(_inputStream, bufferSize)
-  }
-
-  fun receiveByteMessage(): Byte {
-    return super.receiveBinaryMessage(_inputStream)
+  fun receiveMessage(bufferSize: Int = 258): ByteArray {
+    return super.receiveMessage(_inputStream, bufferSize)
   }
 
   fun finish() {
@@ -40,4 +35,3 @@ class Client : Interface {
     _outputStream.close()
   }
 }
-
