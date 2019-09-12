@@ -82,6 +82,8 @@ fun getFileList(host: String, port: Int, request: ByteArray) {
     server = SocketConnection(0, socket)
 
     server.sendMessage(request)
+
+    // response = server.receiveMessage()
   } catch (t: Throwable) {
     println(t)
   }

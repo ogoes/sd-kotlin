@@ -65,8 +65,25 @@ fun deleteFile(request: ByteArray, response: MutableList<Byte>, client: SocketCo
   client.finish()
 }
 
-// fun getFileList(request: ByteArray, client: SocketConnection, localStorage: String = "./.shared/") {
-// } 
+fun getFileList(request: ByteArray, response: MutableList<Byte>, client: SocketConnection, localStorage: String = "./.shared/") {
+  val files = File(localStorage).list()
+  val numberOfFiles = files.size.toByte()
+
+  response.add(2, numberOfFiles) // adicionando na resposta número de arquivos no diretório
+
+  client.sendMessage(response.toByteArray())
+
+  files.forEach {
+    val filenameSize = it.length
+    response.set(response.lastIndex + 1, filenameSize.toByte())
+
+    val nameInByte = it.toByteArray(Charsets.UTF_8)
+
+    for (i in 1..filenameSize) {
+      response.set(response.lastIndex + 1, nameInByte.get(i))
+    }
+  }
+}
 
 // fun getFile(request: ByteArray, client: SocketConnection, localStorage: String = "./.shared/") {
 
