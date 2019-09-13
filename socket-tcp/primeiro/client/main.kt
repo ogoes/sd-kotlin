@@ -1,12 +1,21 @@
-package client
+/**
+ * * @description: neste código se encontram as implementações das funções que enviam as requisições para o servidor
+ * @author Otávio Goes e Dennis Urtubia
+ */
 
-import primeiro.SocketConnection
+package client
 
 import java.io.File
 import java.net.Socket
 import java.net.SocketException
 import java.util.*
+import primeiro.SocketConnection
 
+/**
+ * @param loaded este parâmetro fornece quanto o arquivo já foi baixado
+ * @param size tamanho total do arquivo da transferência
+ * @return
+ */
 fun reloadFileDownloadProgressBar(loaded: Int, size: Int) {
   // println(" [          ] 99%")
 
@@ -31,6 +40,10 @@ fun reloadFileDownloadProgressBar(loaded: Int, size: Int) {
     print("\u001B[u")
 }
 
+/**
+ * *@description efetua a requisição para receber a data/hora do sistema
+ * @param server objeto utilizado para efetuar o envio e recebimento de mensagens
+ */
 fun receiveTimeDate(server: SocketConnection, type: String) {
   server.sendMessage(type)
 
@@ -39,6 +52,10 @@ fun receiveTimeDate(server: SocketConnection, type: String) {
   println(response)
 }
 
+/**
+ * *@description efetua a requisição para a exibição de arquivos da pasta definida por padrão
+ * @param server objeto utilizado para efetuar o envio e recebimento de mensagens
+ */
 fun showFiles(server: SocketConnection) {
   val filesCount: Int = server.receiveIntegerMessage()
 
@@ -53,6 +70,12 @@ fun showFiles(server: SocketConnection) {
   }
 }
 
+/**
+ * *@description efetua a requisição de download do arquivo solicitado pelo cliente
+ * @param server objeto utilizado para efetuar a troca de mensagens
+ * @param filename parâmetro utilizado para enviar ao servidor qual arquivo deseja fazer download
+ * @param localStorage diretório para armazenamento do arquivo baixado
+ */
 fun receiveFile(server: SocketConnection, filename: String, localStorage: String = "./.client/") {
 
   server.sendMessage("DOWN $filename")
@@ -81,6 +104,10 @@ fun receiveFile(server: SocketConnection, filename: String, localStorage: String
   }
 }
 
+/**
+ * *@description esta função é responsável pela identificação do comando solicitado pelo usuário e assim
+ * * é executada a respectiva função deste comando *
+ */
 fun interation(socket: SocketConnection) {
 
   val timeRegex = Regex("time", RegexOption.IGNORE_CASE)
@@ -122,6 +149,12 @@ fun interation(socket: SocketConnection) {
   socket.sendMessage("EXIT")
 }
 
+/**
+ * *@description inicia a conexão do client com o socket e executa o método para a troca
+ * * de mensagens a partir do comando solicitado pelo cliente *
+ * @param args[0] host pelo qual o client é executado
+ * @param args[1] porta pelo qual o client é executado
+ */
 fun main(args: Array<String>) {
 
   println("Connecting ${args[0]}:${args[1]}")
