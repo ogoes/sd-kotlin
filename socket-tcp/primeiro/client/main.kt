@@ -1,6 +1,7 @@
 /**
  * * @description: neste código se encontram as implementações das funções que enviam as requisições para o servidor
- * @author Otávio Goes e Dennis Urtubia
+ * @author Otávio Goes
+ * @author Dennis Urtubia
  */
 
 package client
@@ -12,7 +13,7 @@ import java.util.*
 import primeiro.SocketConnection
 
 /**
- * @param loaded este parâmetro fornece quanto o arquivo já foi baixado
+ * @param loaded este parâmetro informa quanto o arquivo já foi baixado
  * @param size tamanho total do arquivo da transferência
  * @return
  */
@@ -105,8 +106,8 @@ fun receiveFile(server: SocketConnection, filename: String, localStorage: String
 }
 
 /**
- * *@description esta função é responsável pela identificação do comando solicitado pelo usuário e assim
- * * é executada a respectiva função deste comando *
+ * *@description esta função é responsável pela identificação do comando solicitado pelo usuário e
+ * * a chamada da respectiva função *
  */
 fun interation(socket: SocketConnection) {
 
