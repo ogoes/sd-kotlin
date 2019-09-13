@@ -1,11 +1,11 @@
 package server
 
-import primeiro.SocketConnection
 import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import primeiro.SocketConnection
 
 fun getTime(): String {
   val time: LocalTime = LocalTime.now()

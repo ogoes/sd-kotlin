@@ -1,11 +1,10 @@
 package client
 
-import primeiro.SocketConnection
-
 import java.io.File
 import java.net.Socket
 import java.net.SocketException
 import java.util.*
+import primeiro.SocketConnection
 
 fun reloadFileDownloadProgressBar(loaded: Int, size: Int) {
   // println(" [          ] 99%")
