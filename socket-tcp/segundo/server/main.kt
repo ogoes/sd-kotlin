@@ -5,124 +5,189 @@ import java.io.File
 import java.util.*
 import segundo.SocketConnection
 
-fun getFileName(message: ByteArray): String {
-  val fileNameSize: Int = message.get(3).toInt()
+fun createResponseHeader(messageType: Int, commandType: Int, statusCode: Int): ByteArray {
+  val byteArray: ByteArray = ByteArray(3)
+
+  byteArray.set(0, messageType.toByte())
+  byteArray.set(1, commandType.toByte())
+  byteArray.set(2, statusCode.toByte())
+
+  return byteArray
+}
+
+fun getFilename(message: ByteArray): String {
+  val fileNameSize: Int = message.get(2).toInt()
 
   val fileNameInByte: ByteArray = ByteArray(fileNameSize)
 
   for (i in 1..fileNameSize) {
-    fileNameInByte.set(i, message.get(3 + i))
+    fileNameInByte.set(i - 1, message.get(2 + i))
   }
 
-  val charset = Charsets.UTF_8
-  val fileName: String = fileNameInByte.toString(charset)
-  println(fileName)
+  val fileName: String = fileNameInByte.toString(Charsets.UTF_8)
+
   return fileName
 }
 
-fun addFile(request: ByteArray, client: SocketConnection, localStorage: String = "./.shared/") {
+fun addFile(client: SocketConnection, request: ByteArray, localStorage: String = "./.shared") {
   try {
-    val fileSize = request.get(2 + request.get(3).toInt() + 1).toInt()
-    val filename: String = getFileName(request)
 
-    if (fileSize > 0) {
-      val file = File(localStorage + filename)
-      val fileOutputStream = file.outputStream()
+    val filename: String = getFilename(request)
+    val filenameSize: Int = request.get(2).toInt()
 
-      for (i in 1..fileSize) {
-        val byte = client.receiveMessage()
+    var requestInit: Int = filenameSize + 3
 
-        fileOutputStream.write(byte)
-      }
+    val HEXbigEndianFileSize3: Int = (request.get(requestInit + 0).toInt() shl 24) // 0xff000000
+    val HEXbigEndianFileSize2: Int = (request.get(requestInit + 1).toInt() shl 16) // 0x00ff0000
+    val HEXbigEndianFileSize1: Int = (request.get(requestInit + 2).toInt() shl 8) // 0x0000ff00
+    val HEXbigEndianFileSize0: Int = (request.get(requestInit + 3).toInt() shl 0) // 0x000000ff
 
-      fileOutputStream.close()
+    val fileSize: Int = HEXbigEndianFileSize3 or HEXbigEndianFileSize2 or HEXbigEndianFileSize1 or HEXbigEndianFileSize0
+
+    val writer: ByteArray = ByteArray(fileSize)
+
+    for (i in 1..fileSize) {
+      writer.set(i - 1, request.get(requestInit + 2 + i))
     }
 
-    request.set(2, 1.toByte())
-    client.sendMessage(request)
+    val file = File(localStorage + "/" + filename)
+
+    val fileOutputStream = file.outputStream()
+
+    fileOutputStream.write(writer)
+
+    fileOutputStream.close()
+
+    client.sendMessage(createResponseHeader(2, 1, 1)) // SUCCESS
   } catch (t: Throwable) {
-    request.set(2, 2.toByte())
-    client.sendMessage(request)
-  } finally {
-    client.finish()
+    client.sendMessage(createResponseHeader(2, 1, 2)) // ERROR
   }
+
+  client.finish()
 }
 
-fun deleteFile(request: ByteArray, response: MutableList<Byte>, client: SocketConnection, localStorage: String) {
+fun deleteFile(client: SocketConnection, filename: String, localStorage: String = "./.shared") {
   try {
-    val fileName: String = getFileName(request)
-    println(fileName)
-    val file = File(localStorage + "/" + fileName)
+    val file = File(localStorage + "/" + filename)
 
-    file.delete()
+    if (file.exists()) {
+      file.delete()
 
-    response.add(2, 1.toByte()) // SUCESSO
-
-    client.sendMessage(response.toByteArray())
+      client.sendMessage(createResponseHeader(2, 2, 1)) // SUCCESS
+    } else {
+      client.sendMessage(createResponseHeader(2, 2, 2)) // ERROR
+    }
   } catch (t: Throwable) {
-    response.add(2, 2.toByte())
+    client.sendMessage(createResponseHeader(2, 2, 2)) // ERROR
   }
   client.finish()
 }
 
-fun getFileList(request: ByteArray, response: MutableList<Byte>, client: SocketConnection, localStorage: String = "./.shared/") {
-  val files = File(localStorage).list()
-  val numberOfFiles = files.size.toByte()
-
-  response.add(2, numberOfFiles) // adicionando na resposta número de arquivos no diretório
-
-  client.sendMessage(response.toByteArray())
-
-  files.forEach {
-    val filenameSize = it.length
-    response.set(response.lastIndex + 1, filenameSize.toByte())
-
-    val nameInByte = it.toByteArray(Charsets.UTF_8)
-
-    for (i in 1..filenameSize) {
-      response.set(response.lastIndex + 1, nameInByte.get(i))
-    }
-  }
-}
-
-// fun getFile(request: ByteArray, client: SocketConnection, localStorage: String = "./.shared/") {
-
-// }
-
-fun clientHandler(client: SocketConnection, localStorage: String) {
+fun getFileList(client: SocketConnection, localStorage: String = "./.shared") {
 
   try {
-    var message = client.receiveMessage(1024)
-    var command = message.get(1).toInt()
-    println(command)
-    var response: MutableList <Byte> = ArrayList()
+    val files = File(localStorage).list()
+    val fileCounter = files.size
 
-    response.add(0, 2.toByte())
+    val HEXbigEndianFileCounter1: Int = fileCounter shr 8 // 0xff00
+    val HEXbigEndianFileCounter0: Int = fileCounter and 0x00ff
 
-    while (true) {
-      if (command == 1) {
-        addFile(message, client)
-      } else if (command == 2) {
+    val response = createResponseHeader(2, 3, 1) // SUCCESS
 
-        response.add(1, 2.toByte())
-        deleteFile(message, response, client, localStorage)
-        break
+    val filesBytes: MutableList<Byte> = mutableListOf<Byte>(
+      response.get(0),
+      response.get(1),
+      response.get(2),
+      HEXbigEndianFileCounter1.toByte(),
+      HEXbigEndianFileCounter0.toByte()
+    )
+
+    files.forEach {
+      val filenameSize = it.length
+      filesBytes.add(filenameSize.toByte())
+
+      val filenameByteArray = it.toByteArray()
+
+      for (i in 1..filenameSize) {
+        filesBytes.add(filenameByteArray.get(i - 1))
       }
-      // else if (command == 3) {
+    }
 
-      //   response.add(1, 3.toByte())
-      //   getFileList(message, client)
+    client.sendMessage(filesBytes.toByteArray())
+  } catch (t: Throwable) {
+    client.sendMessage(createResponseHeader(2, 3, 2)) // ERROR
+  }
 
-      // } 
-      // else if (command == 4) {
+  client.finish()
+}
 
-      //   response.add(1, 4.toByte())
-      //   getFile(message, client)
+fun getFile(client: SocketConnection, filename: String, localStorage: String = "./.shared") {
+  try {
 
-      // }
+    val file = File(localStorage + "/" + filename)
 
-      message = client.receiveMessage()
-      command = message.get(1).toInt()
+    if (file.exists()) {
+      val fileSize = file.length().toInt()
+
+      val response = createResponseHeader(2, 4, 1)
+
+      val writer: ByteArray = ByteArray(fileSize + 4 + response.size)
+
+      val HEXbigEndianFileSize3: Int = fileSize shr 24 // 0xff000000
+      val HEXbigEndianFileSize2: Int = (fileSize and 0x00ff0000) shr 16 // 0x00ff0000
+      val HEXbigEndianFileSize1: Int = (fileSize and 0x0000ff00) shr 8 // 0x0000ff00
+      val HEXbigEndianFileSize0: Int = fileSize and 0x000000ff // 0x000000ff
+
+      writer.set(0, response.get(0))
+      writer.set(1, response.get(1))
+      writer.set(2, response.get(2))
+
+      writer.set(3, HEXbigEndianFileSize3.toByte())
+      writer.set(4, HEXbigEndianFileSize2.toByte())
+      writer.set(5, HEXbigEndianFileSize1.toByte())
+      writer.set(6, HEXbigEndianFileSize0.toByte())
+
+      val writerInit = 7
+
+      val fileInputStream = file.inputStream()
+      val byte = ByteArray(fileSize)
+      fileInputStream.read(byte)
+
+      for (i in 1..fileSize) {
+        writer.set(writerInit + i - 1, byte.get(i - 1))
+      }
+
+      fileInputStream.close()
+
+      client.sendMessage(writer)
+    } else {
+      client.sendMessage(createResponseHeader(2, 4, 2)) // ERROR
+    }
+
+    client.sendMessage(createResponseHeader(2, 4, 1)) // SUCCESS
+  } catch (t: Throwable) {
+    client.sendMessage(createResponseHeader(2, 4, 2)) // ERROR
+  }
+
+  client.finish()
+}
+
+fun clientHandler(client: SocketConnection, localStorage: String, requestSize: Int = 1024 * 1024) {
+
+  try {
+    val request = client.receiveMessage(requestSize)
+    val command = request.get(1).toInt()
+
+    if (command == 1) { // addFile
+      addFile(client, request, localStorage)
+    } else if (command == 2) { // deleteFile
+      deleteFile(client, getFilename(request), localStorage)
+    } else if (command == 3) { // getFileList
+      getFileList(client, localStorage)
+    } else if (command == 4) { // getFile
+      getFile(client, getFilename(request), localStorage)
+    } else { // ERROR
+      client.sendMessage(createResponseHeader(0, 2, 2))
     }
   } catch (t: Throwable) {
     println(t)
@@ -133,9 +198,6 @@ fun clientHandler(client: SocketConnection, localStorage: String) {
 }
 
 fun main(args: Array<String>) {
-
-  println(args[0])
-  println(args[1])
 
   var server: ServerSocket = ServerSocket(args[1].toInt())
 
@@ -149,4 +211,3 @@ fun main(args: Array<String>) {
     handlerThread.start()
   }
 }
-

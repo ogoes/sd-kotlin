@@ -10,6 +10,20 @@ fun connect(host: String, port: Int): SocketConnection {
   return SocketConnection(socket)
 }
 
+fun getFilename(message: ByteArray): String {
+  val fileNameSize: Int = message.get(2).toInt()
+
+  val fileNameInByte: ByteArray = ByteArray(fileNameSize)
+
+  for (i in 1..fileNameSize) {
+    fileNameInByte.set(i - 1, message.get(2 + i))
+  }
+
+  val fileName: String = fileNameInByte.toString(Charsets.UTF_8)
+
+  return fileName
+}
+
 fun createByteArray(messageType: Int, commandIdentifier: Int, fileName: String): ByteArray {
 
   val fileNameSize = fileName.length
@@ -31,22 +45,53 @@ fun createByteArray(messageType: Int, commandIdentifier: Int, fileName: String):
 /**
  * @param
  */
-fun addFile(server: SocketConnection, request: ByteArray, pathFile: String) {
+fun addFile(server: SocketConnection, request: ByteArray, path: String) {
   try {
-    val file: File = File(pathFile)
+    val filename = getFilename(request)
 
+    val file: File = File(path + "/" + filename)
     val fileSize: Int = file.length().toInt()
 
+    val writerBytes: ByteArray = ByteArray(request.size + 4 + fileSize)
+    val writerInit = request.size
+
+    // / começa a criar todo o pacote
+
+    for (i in 1..request.size) {
+      writerBytes.set(i - 1, request.get(i - 1))
+    }
+
+    val bigEndianInt3: Int = fileSize shr 24 // 0xff000000
+    val bigEndianInt2: Int = (fileSize and 0x00ff0000) shr 16 // 0x00ff0000
+    val bigEndianInt1: Int = (fileSize and 0x0000ff00) shr 8 // 0x0000ff00
+    val bigEndianInt0: Int = fileSize and 0x000000ff // 0x000000ff
+
+    writerBytes.set(writerInit + 0, bigEndianInt3.toByte())
+    writerBytes.set(writerInit + 1, bigEndianInt2.toByte())
+    writerBytes.set(writerInit + 2, bigEndianInt1.toByte())
+    writerBytes.set(writerInit + 3, bigEndianInt0.toByte())
+
+    val writerFileInit: Int = writerInit + 4
+
     val fileInputStream = file.inputStream()
-    val bytes = ByteArray(1)
-
-    request.set(request.lastIndex, fileSize.toByte())
-
-    server.sendMessage(request)
+    val byte = ByteArray(fileSize)
+    fileInputStream.read(byte)
+    fileInputStream.close()
 
     for (i in 1..fileSize) {
-      fileInputStream.read(bytes)
-      server.sendMessage(bytes)
+      writerBytes.set(writerFileInit + i - 1, byte.get(i - 1))
+    }
+
+    server.sendMessage(writerBytes)
+
+    val response: ByteArray = server.receiveMessage(3)
+
+    val requestStatus: Int = response.get(2).toInt()
+
+    if (requestStatus == 1) {
+      println("SUCCESS")
+    } else if (requestStatus == 2) {
+      println("ERROR")
     }
   } catch (t: Throwable) {
     println(t)
@@ -63,8 +108,13 @@ fun deleteFile(server: SocketConnection, request: ByteArray) {
     server.sendMessage(request)
 
     val response: ByteArray = server.receiveMessage()
-    val codeResponse: Int = response.get(2).toInt()
-    println(codeResponse)
+    val requestStatus: Int = response.get(2).toInt()
+
+    if (requestStatus == 1) {
+      println("SUCCESS")
+    } else if (requestStatus == 2) {
+      println("ERROR")
+    }
   } catch (t: Throwable) {
     println(t)
   }
@@ -74,64 +124,128 @@ fun deleteFile(server: SocketConnection, request: ByteArray) {
 /**
  * @param
  */
-fun getFileList(host: String, port: Int, request: ByteArray) {
-  val socket: Socket
-  val server: SocketConnection
+fun getFileList(server: SocketConnection, request: ByteArray) {
   try {
-    socket = Socket(host, port)
-    server = SocketConnection(0, socket)
 
     server.sendMessage(request)
 
-    // response = server.receiveMessage()
+    val response = server.receiveMessage()
+
+    val requestStatus: Int = response.get(2).toInt()
+
+    if (requestStatus == 1) {
+
+      val filesCounter1HEX: Int = response.get(3).toInt()
+      val filesCounter0HEX: Int = response.get(4).toInt()
+
+      val fileCounter: Int = ((filesCounter1HEX shl 8) or filesCounter0HEX) // 0xff00 or 0x00ff == 0xffff
+
+      var responseInit = 5
+
+      for (i in 1..fileCounter) {
+        val fileSize: Int = response.get(responseInit).toInt()
+
+        val filenameByteArray: ByteArray = ByteArray(fileSize)
+
+        for (j in 1..fileSize) {
+          filenameByteArray.set(j - 1, response.get(responseInit + j))
+        }
+
+        val filename: String = filenameByteArray.toString(Charsets.UTF_8)
+
+        println(filename)
+
+        responseInit += (fileSize + 1)
+      }
+    } else if (requestStatus == 2) {
+      println("ERROR")
+    }
   } catch (t: Throwable) {
     println(t)
   }
+
+  server.finish()
 }
 
 /**
  * @param
  * @
  */
-fun getFile(host: String, port: Int, request: ByteArray) {
-  val socket: Socket
-  val server: SocketConnection
+fun getFile(server: SocketConnection, request: ByteArray, path: String, responseSize: Int = 1024 * 1024) {
   try {
-    socket = Socket(host, port)
-    server = SocketConnection(0, socket)
-
     server.sendMessage(request)
+
+    val filename = getFilename(request)
+
+
+    val response = server.receiveMessage(responseSize)
+    val requestStatus: Int = response.get(2).toInt()
+
+    if (requestStatus == 1) {
+      val bigEndianInt3: Int = response.get(3).toInt() shl 24 // 0xff000000
+      val bigEndianInt2: Int = response.get(4).toInt() shl 16 // 0x00ff0000
+      val bigEndianInt1: Int = response.get(5).toInt() shl 8 // 0x0000ff00
+      val bigEndianInt0: Int = response.get(6).toInt() shl 0 // 0x000000ff
+
+      val fileSize: Int = bigEndianInt3 or bigEndianInt2 or bigEndianInt1 or bigEndianInt0
+
+      val file: File = File(path + "/" + filename)
+      val fileOutputStream = file.outputStream()
+
+      val bytes: ByteArray = ByteArray(fileSize)
+
+      val responseInit = 7
+
+      for (i in 1..fileSize) {
+        bytes.set(i - 1, response.get(responseInit + i - 1))
+      }
+
+      fileOutputStream.write(bytes)
+      fileOutputStream.close()
+    } else if (requestStatus == 2) {
+      println("ERROR")
+    }
   } catch (t: Throwable) {
     println(t)
   }
+
+  server.finish()
 }
 
-fun interation(host: String, port: Int) {
+fun interation(host: String, port: Int, defaultPath: String) {
   try {
-    print("PROMPT:\n\n\\> ")
-    var message = readLine()!!
+    print("PROMPT:\n\\> ")
 
-    val addFileRegex = Regex("addfile", RegexOption.IGNORE_CASE)
+    val addFileRegex = Regex("addfile\\s[\\w\\d\\.]+", RegexOption.IGNORE_CASE)
     val deleteRegex = Regex("delete\\s[\\w\\d\\.]+", RegexOption.IGNORE_CASE)
     val getFileListRegex = Regex("getfilelist", RegexOption.IGNORE_CASE)
-    val getFileRegex = Regex("getfile", RegexOption.IGNORE_CASE)
+    val getFileRegex = Regex("getfile\\s[\\w\\d\\.]+", RegexOption.IGNORE_CASE)
+    val exitRegex = Regex("exit", RegexOption.IGNORE_CASE)
+    val fileRegex = Regex("\\s[\\w\\d\\.]+")
 
-    val server: SocketConnection = connect(host, port)
+    var fileName: String
+    var message = readLine()!!
+    // val server: SocketConnection = connect(host, port)
 
-    while (true) {
-      val fileRegex = Regex("\\s[\\w\\d\\.]+")
-      var fileName = fileRegex.find(message)!!.value
-      fileName = fileName.substring(1)
+    while (exitRegex.matches(message) != true) {
 
       if (addFileRegex.matches(message)) {
+        fileName = fileRegex.find(message)!!.value
+        fileName = fileName.substring(1)
 
-        addFile(server, createByteArray(1, 1, fileName), fileName)
+        addFile(connect(host, port), createByteArray(1, 1, fileName), defaultPath)
       } else if (deleteRegex.matches(message)) {
-        deleteFile(server, createByteArray(1, 2, fileName))
+        fileName = fileRegex.find(message)!!.value
+        fileName = fileName.substring(1)
+
+        deleteFile(connect(host, port), createByteArray(1, 2, fileName))
       } else if (getFileListRegex.matches(message)) {
-        getFileList(host, port, createByteArray(1, 3, fileName))
+        getFileList(connect(host, port), createByteArray(1, 3, ""))
       } else if (getFileRegex.matches(message)) {
-        getFile(host, port, createByteArray(1, 4, fileName))
+        fileName = fileRegex.find(message)!!.value
+        fileName = fileName.substring(1)
+
+        getFile(connect(host, port), createByteArray(1, 4, fileName), "./.client")
       }
 
       print("\\> ")
@@ -148,7 +262,7 @@ fun main(args: Array<String>) {
 
     try {
 
-      interation(args[0], args[1].toInt())
+      interation(args[0], args[1].toInt(), "./.client")
     } catch (e: SocketException) {
       println("Erro")
     } catch (t: Throwable) {
