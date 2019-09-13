@@ -1,3 +1,9 @@
+/**
+ * * @description: neste código se encontram as implementações das funções que enviam as requisições para o servidor
+ * @author Otávio Goes
+ * @author Dennis Urtubia
+ */
+
 package segundo
 
 import java.io.File

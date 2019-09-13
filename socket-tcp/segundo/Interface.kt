@@ -1,3 +1,8 @@
+/**
+ * *@description neste código se encontra a interface que define todas as funções para troca de mensagens
+ * @author Otávio Goes
+ */
+
 package segundo
 
 import java.io.InputStream

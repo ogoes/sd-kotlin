@@ -1,10 +1,14 @@
+/**
+ * *@description neste código se encontra a interface que define todas as funções para troca de mensagens
+ * @author Otávio Goes
+ */
+
 package primeiro
 
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
 import java.util.*
-import primeiro.Interface
 
 class SocketConnection : Interface {
 
@@ -53,3 +57,4 @@ class SocketConnection : Interface {
     _outputStream.close()
   }
 }
+

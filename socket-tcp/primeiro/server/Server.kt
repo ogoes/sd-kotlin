@@ -1,7 +1,12 @@
+/**
+ * *@description neste código se encontra a classe que efetua o controle do servidor
+ * @author Otávio Goes
+ */
+
 package server
 
-import primeiro.SocketConnection
 import java.net.ServerSocket
+import primeiro.SocketConnection
 
 class ServerSocket {
   private var _socket: ServerSocket
@@ -22,4 +27,3 @@ class ServerSocket {
     return client
   }
 }
-

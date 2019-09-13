@@ -1,3 +1,8 @@
+/**
+ * *@description neste código se encontra a classe que efetua o controle do servidor
+ * @author Otávio Goes
+ */
+
 package segundo.server
 
 import java.net.ServerSocket

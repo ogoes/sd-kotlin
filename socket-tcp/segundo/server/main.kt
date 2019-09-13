@@ -1,10 +1,18 @@
-// implementação das funções para enviar para o client
+/**
+ * * @description: neste código se encontram as implementações das funções solicitadas pelo client
+ * @author Otávio Goes
+ * @author Dennis Urtubia
+ */
+
 package segundo.server
 
 import java.io.File
 import java.util.*
 import segundo.SocketConnection
 
+/**
+ * *@description cria o header de resposta com os campos padrões definidos pelo protocolo
+ */
 fun createResponseHeader(messageType: Int, commandType: Int, statusCode: Int): ByteArray {
   val byteArray: ByteArray = ByteArray(3)
 
@@ -211,3 +219,4 @@ fun main(args: Array<String>) {
     handlerThread.start()
   }
 }
+

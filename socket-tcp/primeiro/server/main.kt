@@ -1,3 +1,9 @@
+/**
+ * * @description: neste código se encontram as implementações das funções solicitadas pelo client
+ * @author Otávio Goes
+ * @author Dennis Urtubia
+ */
+
 package server
 
 import java.io.File
@@ -7,16 +13,27 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import primeiro.SocketConnection
 
+/**
+ * @return hora com formato especificado na descrição do trabalho
+ */
 fun getTime(): String {
   val time: LocalTime = LocalTime.now()
 
   return time.format(DateTimeFormatter.ofPattern("HH:mm:ss")).toString()
 }
+
+/**
+ * @return data com formato especificado na descrição do trabalho
+ */
 fun getDate(): String {
   val date: LocalDateTime = LocalDateTime.now()
 
   return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")).toString()
 }
+
+/**
+ * *@description envia para o client os arquivos da pasta definida por padrão
+ */
 fun showFiles(client: SocketConnection, folder: String = "default") {
 
   if (folder.isEmpty()) {
@@ -32,6 +49,10 @@ fun showFiles(client: SocketConnection, folder: String = "default") {
     }
   }
 }
+
+/**
+ * *@description envia o arquivo solicitado pelo client
+ */
 fun sendFile(client: SocketConnection, filename: String) {
 
   val file: File = File(filename)
@@ -59,6 +80,9 @@ fun sendFile(client: SocketConnection, filename: String) {
     client.receiveTextMessage()
   }
 }
+/**
+ * *@description identifica o comando solicitado pelo client e executa a função do respectivo comando
+ */
 fun clientHandler(client: SocketConnection, folder: String) {
 
   try {
@@ -100,9 +124,6 @@ fun clientHandler(client: SocketConnection, folder: String) {
 }
 
 fun main(args: Array<String>) {
-
-  println(args[0])
-  println(args[1])
 
   var server: ServerSocket = ServerSocket(args[1].toInt())
 
