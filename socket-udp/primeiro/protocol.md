@@ -46,6 +46,6 @@
 
 -   RESPONSE
 
-    | 1 byte  |      1 byte       |  (1-256) bytes  |  4 bytes  |
-    | :-----: | :---------------: | :-------------: | :-------: |
-    | type(3) | host address size | host ip address | host port |
+    | 1 byte  |         1 byte          |      1 byte       |  (1-256) bytes  |  4 bytes  |
+    | :-----: | :---------------------: | :---------------: | :-------------: | :-------: |
+    | type(3) | SUCCESS(1) - FAILURE(2) | host address size | host ip address | host port |
