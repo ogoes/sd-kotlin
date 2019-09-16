@@ -25,16 +25,6 @@ class NameServer : Interface {
   fun acceptConnection(): Socket = _socket.accept()
 
   fun clientHandler(client: Connection) {
-    var connected: Boolean = false
-
-    while (connected == false) {
-      var message = client.receiveMessage()
-      var type = message.get(0).toInt()
-
-      if (type == 1) {
-        connected = connectPeer(client, message)
-      }
-    }
 
     try {
 
@@ -42,8 +32,11 @@ class NameServer : Interface {
       var requestType = request.get(0).toInt()
 
 			while (requestType != 4) { // 4-QUIT
-				
-        if (requestType == 2) {
+
+
+				if (requestType == 1) {
+					connectPeer(client, request)
+				} else if (requestType == 2) {
 					sendConnectedHostsNicknames(client)
         } else if (requestType == 3) {
 					hostInformationByNickname(client, request)
