@@ -10,31 +10,39 @@ import java.io.InputStream
 import java.io.OutputStream
 
 
-class Connection: Interface {
-	private var _id: Int
-	private var _socket: Socket
-	private var _port: Int
-	private lateinit var _nickname: String
-	private lateinit var _iattr: InetAddress
+open class Connection: Interface {
+	protected var _id: Int = 0
+	protected lateinit var _socket: Socket
+	protected var _port: Int = 0
+	protected var _nickname: String
+	protected lateinit var _iattr: InetAddress
 
-	private var _inputStream: InputStream
-  private var _outputStream: OutputStream
+
+	private var _connected: Boolean
 	
-	constructor (id: Int = 0, socket: Socket) {
+	constructor (id: Int) {
+		_id = id
+
+
+		_nickname = ""
+		_connected = false
+	}
+
+	constructor (id: Int, socket: Socket) {
 		_id = id
 		_socket = socket
 		_port = -1
 
-		_inputStream = socket.getInputStream()
-		_outputStream = socket.getOutputStream()
+    _nickname = _id.toString()
+    _connected = false
 	}
 
 	fun sendMessage (message: ByteArray) {
-		super.sendBinaryMessage(_outputStream, message)
+		super.sendBinaryMessage(_socket.getOutputStream(), message)
 	}
 
 	fun receiveMessage (): ByteArray {
-		return super.receiveBinaryMessage(_inputStream, 1024 * 1024)
+		return super.receiveBinaryMessage(_socket.getInputStream(), 1024 * 1024)
 	}
 	
 	fun setPort (port: Int) {
@@ -50,6 +58,6 @@ class Connection: Interface {
 	fun setAddress (addr: InetAddress) {
 		_iattr = addr
 	}
-  fun getAddress (): String = _iattr.toString()
+  fun getAddress (): String = _iattr.getHostName()
 
 }
