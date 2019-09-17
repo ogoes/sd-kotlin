@@ -1,10 +1,11 @@
-package primeiro.ns
+package ns
 
 
 import primeiro.Interface
 
 import java.net.InetAddress
 import java.net.Socket
+import java.net.SocketException
 
 import java.io.InputStream
 import java.io.OutputStream
@@ -58,6 +59,6 @@ open class Connection: Interface {
 	fun setAddress (addr: InetAddress) {
 		_iattr = addr
 	}
-  fun getAddress (): String = _iattr.getHostName()
+  fun getAddress (): String = _iattr.getHostAddress()
 
 }

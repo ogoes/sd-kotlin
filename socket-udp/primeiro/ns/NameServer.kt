@@ -1,4 +1,4 @@
-package primeiro.ns
+package ns
 
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -31,24 +31,23 @@ class NameServer : Interface {
       var request = client.receiveMessage()
       var requestType = request.get(0).toInt()
 
-			while (requestType != 4) { // 4-QUIT
+      while (requestType != 4) { // 4-QUIT
 
-
-				if (requestType == 1) {
-					connectPeer(client, request)
-				} else if (requestType == 2) {
-					sendConnectedHostsNicknames(client)
+        if (requestType == 1) {
+          connectPeer(client, request)
+        } else if (requestType == 2) {
+          sendConnectedHostsNicknames(client)
         } else if (requestType == 3) {
-					hostInformationByNickname(client, request)
-				}
-				
+          hostInformationByNickname(client, request)
+        }
+
         request = client.receiveMessage()
         requestType = request.get(0).toInt()
       }
     } catch (e: Throwable) {
-		}
-		
-		_peers.remove(client)
+    }
+
+    _peers.remove(client)
   }
 
   private fun connectPeer(client: Connection, request: ByteArray): Boolean {
@@ -68,12 +67,17 @@ class NameServer : Interface {
       beginValid += (1 + addressSize)
 
       // port
+
+
+      beginValid = request.size - 5
       val HEXport3: Int = (request.get(beginValid + 0).toInt()) shl 24
-      val HEXport2: Int = (request.get(beginValid + 1).toInt() and 0x00ff0000) shl 16
-      val HEXport1: Int = (request.get(beginValid + 2).toInt() and 0x0000ff00) shl 8
-      val HEXport0: Int = (request.get(beginValid + 3).toInt() and 0x000000ff) shl 0
+      val HEXport2: Int = (request.get(beginValid + 1).toInt()) shl 16
+      val HEXport1: Int = (request.get(beginValid + 2).toInt()) shl 8
+      val HEXport0: Int = (request.get(beginValid + 3).toInt()) shl 0
 
       val port: Int = HEXport3 or HEXport2 or HEXport1 or HEXport0
+
+      println(port)
 
       client.setNickname(nickname)
       client.setAddress(address)
@@ -175,6 +179,8 @@ class NameServer : Interface {
     var beginValid = 1
     val nicknameSize = request.get(beginValid).toInt()
     val nicknameByte: MutableList<Byte> = mutableListOf()
+
+    beginValid += 1
 
     for (i in 1..nicknameSize) {
       nicknameByte.add(request.get(beginValid))

@@ -1,14 +1,10 @@
-package primeiro.ns
-
-
-import primeiro.ns.NameServer
-import primeiro.ns.Connection
+package ns
 
 import java.net.SocketException
 import java.net.Socket
 
 
-fun main (args: ArrayList<String>) {
+fun main (args: Array<String>) {
 
   val server = NameServer(args[0].toInt())
 

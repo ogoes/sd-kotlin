@@ -5,61 +5,50 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
 import java.net.SocketException
-import primeiro.ns.Connection
+import ns.Connection
 
 
-import primeiro.Interface
+
+import java.util.Random
+
 class Peer : Connection {
 
   private lateinit var _connectedPeers: MutableList<String>
-  private lateinit var _messages: MutableList<String>
+  private var _messages: MutableList<String>
   private lateinit var _nameServer: Connection
 
   private val _dgramSocket: DatagramSocket
   private var _connected: Boolean
 
 
-  private var _server: String
-  private var _serverPort: Int
+  constructor () : super(0) {
+    val port: Int = Random().nextInt(65535 - 7000) + 7000
 
+    _dgramSocket = DatagramSocket(port)
 
-  constructor (serverIp: String, serverPort: Int) : super(0) {
-    _server = serverIp
-    _serverPort = serverPort
-
-    _dgramSocket = DatagramSocket()
-
-    setPort(_dgramSocket.getLocalPort())
+    setPort(port)
     setAddress(InetAddress.getLocalHost())
 
     _connected = false
-
-    connectToNameServer(serverIp, serverPort)
+    _messages = mutableListOf()
   }
 
-  private fun connectToNameServer(serverIp: String, serverPort: Int) {
+  fun connectToNameServer(serverIp: String, serverPort: Int) {
 
     try {
-      Socket(serverIp, serverPort)
+      _socket = Socket(serverIp, serverPort)
     } catch (t: SocketException) {
       println("Erro ao conectar com o servidor")
       return
     }
+
+    println(getPort())
 
     setNickname()
 
-
-    var socket: Socket
-    try {
-      socket = Socket(serverIp, serverPort)
-    } catch (t: SocketException) {
-      println("Erro ao conectar com o servidor")
-      return
-    }
-
-    _socket = socket
-
     register()
+
+    _connected = true
   }
 
   fun showConnectedHosts() {
@@ -86,12 +75,26 @@ class Peer : Connection {
     }
   }
 
-  fun sendMessage(nickname: String, message: String) {
+  fun sendMessages() {
+    showConnectedHosts()
+    while (_connected) {
+      print("informe o usuário: ")
+      val user: String = readLine()!!
+
+      print("a mensagem: ")
+      val message: String = readLine()!!
+
+      sendMessage(user, message)
+    }
+  }
+
+  private fun sendMessage(nickname: String, message: String) {
+    getNicknameList()
     if (_connectedPeers.contains(nickname) == false) {
       println("Usuário não conectado")
       return
     }
-    
+
     val (hostIP, hostPort) = getHostInfos(nickname)
 
     val hostAddress: InetAddress = InetAddress.getByName(hostIP)
@@ -117,19 +120,16 @@ class Peer : Connection {
 
     _dgramSocket.send(packet)
 
-
-    showMessages ()
+    showMessages()
   }
 
-
-  private fun showMessages () {
+  private fun showMessages() {
     val initIndex: Int = _messages.size - 10
-
 
     print("\u001B[H")
 
     if (initIndex < 0) {
-      _messages.forEach { 
+      _messages.forEach {
         println(it)
       }
       for (i in 1..(_messages.size - initIndex)) {
@@ -140,7 +140,6 @@ class Peer : Connection {
         println(_messages.get(i))
       }
     }
-
 
     for (i in 1..19) {
       print("")
@@ -180,6 +179,7 @@ class Peer : Connection {
   }
 
   private fun getNicknameList() {
+    _connectedPeers = mutableListOf()
     try {
       val requestNicknameList = 2
       sendMessage(byteArrayOf(requestNicknameList.toByte()))
@@ -229,14 +229,11 @@ class Peer : Connection {
 
       if (invalid) {
         novamente = " novamente"
-        println("nickname invalido")
+        println("Nickname invalido")
       }
     }
 
     setNickname(nickname)
-
-    val requestExit: Int = 4
-    sendMessage(byteArrayOf(requestExit.toByte()))
   }
 
   private fun getHostInfos(nickname: String): Pair<String, Int> {
@@ -270,12 +267,16 @@ class Peer : Connection {
 
         val address: String = addressBytes.toByteArray().toString(Charsets.UTF_8)
 
-        val HEXport3: Int = response.get(init + 0).toInt() shr 24
-        val HEXport2: Int = (response.get(init + 1).toInt() and 0x00ff0000) shr 16
-        val HEXport1: Int = (response.get(init + 2).toInt() and 0x0000ff00) shr 8
-        val HEXport0: Int = response.get(init + 3).toInt() and 0x000000ff
+        val HEXport3: Int = (response.get(init + 0).toInt()) shl 24 // 0xff000000
+        val HEXport2: Int = (response.get(init + 1).toInt()) shl 16 // 0x00ff0000
+        val HEXport1: Int = (response.get(init + 2).toInt()) shl 8  // 0x0000ff00
+        val HEXport0: Int = (response.get(init + 3).toInt()) shl 0  // 0x000000ff
 
         val port: Int = HEXport3 or HEXport2 or HEXport1 or HEXport0
+
+
+        println(address)
+        println(port)
 
         return Pair<String, Int>(address, port)
       }
@@ -287,10 +288,12 @@ class Peer : Connection {
     val requestType: Int = 1
 
     val nickname = getNickname()
-    val nicknameSize = nickname.length
+    val nicknameBytes: ByteArray = nickname.toByteArray(Charsets.UTF_8)
+    val nicknameSize = nicknameBytes.size
 
     val address = getAddress()
-    val addressSize = address.length
+    val addressBytes: ByteArray = address.toByteArray(Charsets.UTF_8)
+    val addressSize = addressBytes.size
 
     val port = getPort()
 
@@ -300,13 +303,13 @@ class Peer : Connection {
     requestBytes.add(nicknameSize.toByte())
 
     for (i in 1..nicknameSize) {
-      requestBytes.add(nickname.get(i - 1).toByte())
+      requestBytes.add(nicknameBytes.get(i - 1))
     }
 
     requestBytes.add(addressSize.toByte())
 
     for (i in 1..addressSize) {
-      requestBytes.add(address.get(i - 1).toByte())
+      requestBytes.add(addressBytes.get(i - 1))
     }
 
     val HEXport3: Int = port shr 24
